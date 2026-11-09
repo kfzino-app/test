@@ -1,0 +1,31 @@
+# Kfzino – Strato/Apache: SPA-Fallback für sprechende URLs (z. B. /bmw-3er-e90-e91-e92-e93/m3/schwachstellen)
+Options -MultiViews -Indexes
+DirectoryIndex index.html
+AddDefaultCharset utf-8
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  # Statische Assets nie umschreiben (fehlende Datei = echter 404 statt index.html)
+  RewriteRule ^assets/ - [L]
+  # Existierende Dateien und Ordner direkt ausliefern
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+  # Alles andere → App (React-Router entscheidet; unbekannte Fahrzeuge → Startseite)
+  RewriteRule ^ index.html [L]
+</IfModule>
+
+# index.html nicht lange cachen (neue Builds sofort sichtbar), gehashte Assets lange
+<IfModule mod_headers.c>
+  <FilesMatch "^index\.html$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+  <If "%{REQUEST_URI} =~ m#^/assets/.+-[A-Za-z0-9_-]{8,}\.(js|css)$#">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </If>
+</IfModule>
+
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css application/javascript application/json image/svg+xml
+</IfModule>
